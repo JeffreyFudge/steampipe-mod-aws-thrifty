@@ -1,7 +1,7 @@
 variable "cloudwatch_log_stream_age_max_days" {
   type        = number
   description = "The maximum number of days log streams are allowed without any log event written to them."
-  default     = 90
+  default     = 180
 }
 
 locals {
@@ -51,7 +51,7 @@ control "cw_log_group_retention" {
 }
 
 control "cw_log_stream_unused" {
-  title       = "Unused log streams should be removed if not required"
+  title       = "Unused log streams should be removed if not required (only 15 shown)"
   description = "Unnecessary log streams should be deleted for storage cost savings."
   severity    = "low"
 
@@ -78,6 +78,8 @@ control "cw_log_stream_unused" {
       end as reason
       ${local.common_dimensions_sql}
     from
-      aws_cloudwatch_log_stream;
+      aws_cloudwatch_log_stream
+    where date_part('day', now() - last_ingestion_time) > $1
+    limit 15;
   EOQ
 }
